@@ -1,0 +1,4 @@
+interface:
+  display_name: "External Multimodal"
+  short_description: "用外置多模态模型识别图片视频并生成、编辑和修图内容"
+  default_prompt: "Use $external-multimodal to analyze, generate, or edit images with the configured external provider."
