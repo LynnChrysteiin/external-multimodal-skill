@@ -19,7 +19,7 @@ The current provider adapter is StepFun. The skill is intentionally named `exter
 - Provider: StepFun
 - Perception model: `step-3.7-flash`
 - Image generation/editing model: `step-image-edit-2`
-- Perception and Files API base URL: `https://api.stepfun.com/v1`
+- Perception Chat Completions base URL: `https://api.stepfun.com/v1`
 - Image generation/editing base URL: `https://api.stepfun.com/step_plan/v1`
 - API key environment variable: `STEP_API_KEY`
 
@@ -121,8 +121,8 @@ python scripts/external_multimodal.py image \
 
 ## Notes
 
-- Local image/video perception defaults to provider file upload.
-- Use `--transport base64` for small one-off local images when persistent provider storage is undesirable.
+- Local image/video perception defaults to Base64 data URLs and does not use the provider Files API.
+- Use `--transport url` only for URL-like inputs.
 - Use `--max-tokens 4096` or higher for detailed image/video analysis.
 - Use `--json-output` for image/video analysis responses; `--output` is only for image generation and editing.
 - For reference-to-image workflows, analyze the reference first, then run `generate` with the derived style prompt.

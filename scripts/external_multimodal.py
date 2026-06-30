@@ -35,15 +35,9 @@ def is_remote_url(value: str) -> bool:
     return parsed.scheme in {"http", "https"}
 
 
-def is_stepfile_url(value: str) -> bool:
-    return value.startswith("stepfile://")
-
-
 def describe_input(value: str) -> dict[str, str]:
     if is_remote_url(value):
         return {"kind": "remote_url", "value": value}
-    if is_stepfile_url(value):
-        return {"kind": "provider_file_url", "value": "provider_file_url"}
     if value.startswith("data:"):
         return {"kind": "data_url", "value": "data_url"}
     return {"kind": "local_file", "value": str(Path(value).expanduser())}
@@ -99,12 +93,6 @@ def encode_data_url(path: Path, kind: str) -> str:
     return f"data:{mime};base64,{encoded}"
 
 
-def upload_file(client: Any, path: Path) -> str:
-    with path.open("rb") as file_obj:
-        uploaded = client.files.create(file=file_obj, purpose="storage")
-    return f"stepfile://{uploaded.id}"
-
-
 def resolve_media_url(
     *,
     client: Any | None,
@@ -113,21 +101,19 @@ def resolve_media_url(
     transport: str,
     dry_run: bool,
 ) -> str:
-    if is_remote_url(value) or is_stepfile_url(value) or value.startswith("data:"):
+    if is_remote_url(value) or value.startswith("data:"):
         return value
 
     path = Path(value).expanduser()
     validate_local_file(path, kind)
 
     if transport == "url":
-        raise MultimodalCliError("--transport url requires a remote URL, data URL, or provider file URL input")
+        raise MultimodalCliError("--transport url requires a remote URL or data URL input")
     if transport == "base64":
         return encode_data_url(path, kind)
     if dry_run:
-        return f"stepfile://DRY_RUN_{path.name}"
-    if client is None:
-        raise MultimodalCliError("Internal error: live file upload requested without a client")
-    return upload_file(client, path)
+        return f"data:{guess_mime(path, kind)};base64,DRY_RUN_{path.name}"
+    raise MultimodalCliError(f"Unsupported transport: {transport}")
 
 
 def build_perception_payload(args: argparse.Namespace, media_urls: list[str]) -> dict[str, Any]:
@@ -257,7 +243,7 @@ def generate_image(client: Any, args: argparse.Namespace) -> dict[str, Any]:
 def edit_image(client: Any, args: argparse.Namespace) -> dict[str, Any]:
     if len(args.inputs) != 1:
         raise MultimodalCliError("Edit mode accepts exactly one --input image.")
-    if is_remote_url(args.inputs[0]) or args.inputs[0].startswith("data:") or is_stepfile_url(args.inputs[0]):
+    if is_remote_url(args.inputs[0]) or args.inputs[0].startswith("data:"):
         raise MultimodalCliError("Edit mode currently requires a local image file. Download remote images before editing.")
     input_path = Path(args.inputs[0]).expanduser()
     validate_local_file(input_path, "edit")
@@ -323,7 +309,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         help="Media input. Required for image/video/edit tasks; repeat for multiple images.",
     )
     parser.add_argument("--prompt", required=True, help="Question, generation prompt, or edit instruction.")
-    parser.add_argument("--transport", choices=["files", "base64", "url"], default="files", help="How to send local perception files.")
+    parser.add_argument("--transport", choices=["base64", "url"], default="base64", help="How to send local perception files.")
     parser.add_argument("--detail", choices=["high", "low", "auto"], default="high", help="Image detail level for perception.")
     parser.add_argument("--reasoning-effort", choices=["low", "medium", "high"], default="medium", help="Provider reasoning effort for perception.")
     parser.add_argument("--max-tokens", type=int, default=4096, help="Maximum perception output tokens.")
@@ -364,7 +350,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.dry_run:
             if args.kind in {"image", "video"}:
                 for value in args.inputs:
-                    if not (is_remote_url(value) or is_stepfile_url(value) or value.startswith("data:")):
+                    if not (is_remote_url(value) or value.startswith("data:")):
                         validate_local_file(Path(value).expanduser(), args.kind)
             if args.kind in {"generate", "edit"}:
                 validate_image_options(args)

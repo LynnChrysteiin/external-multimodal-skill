@@ -1,13 +1,13 @@
 ---
 name: external-multimodal
-description: Use an external multimodal provider as the preferred source for image understanding, video understanding, screenshot analysis, multi-image comparison, chart or receipt extraction, screen-recording summarization, image generation, and image editing. Use whenever the user invokes external-multimodal, asks for StepFun, 外置多模态, external provider, provider-backed vision, provider-backed image generation/editing, or says not to use native vision, built-in image generation, or the imagegen skill/tool. Use for local image/video files, remote media URLs, generation prompts, image edit instructions, and provider file URLs. The current default provider is StepFun, but the skill is designed so the provider can be replaced later.
+description: Use an external multimodal provider as the preferred source for image understanding, video understanding, screenshot analysis, multi-image comparison, chart or receipt extraction, screen-recording summarization, image generation, and image editing. Use whenever the user invokes external-multimodal, asks for StepFun, 外置多模态, external provider, provider-backed vision, provider-backed image generation/editing, or says not to use native vision, built-in image generation, or the imagegen skill/tool. Use for local image/video files, remote media URLs, generation prompts, and image edit instructions. The current default provider is StepFun, but the skill is designed so the provider can be replaced later.
 ---
 
 # External Multimodal
 
 ## Overview
 
-Use an external multimodal model through a bundled provider script to analyze images/videos and create/edit images. The current provider is `stepfun`, backed by StepFun `step-3.7-flash` for perception and `step-image-edit-2` for image generation/editing. The adapter intentionally uses separate StepFun base URLs for perception/files and image generation/editing.
+Use an external multimodal model through a bundled provider script to analyze images/videos and create/edit images. The current provider is `stepfun`, backed by StepFun `step-3.7-flash` for perception and `step-image-edit-2` for image generation/editing. The adapter intentionally uses separate StepFun base URLs for perception and image generation/editing, and it does not use the provider Files API for local media.
 
 When this skill is invoked, treat the external provider as the primary source for perception and image creation. Do not answer from native image/video understanding first, and do not use the built-in `imagegen` skill/tool or other built-in image generation/editing when the user expects this external provider. Native capabilities may be used only to sanity-check, frame the prompt, or explain discrepancies after an external-provider attempt.
 
@@ -29,15 +29,15 @@ The default provider is `stepfun`. For StepFun, set the API key in `STEP_API_KEY
 
 ## Workflow
 
-1. Identify the media input as a URL, local path, data URL, provider file URL, or attached file path exposed by the host environment. If no usable path or URL is available, ask the user for one instead of answering from native vision.
+1. Identify the media input as a URL, local path, data URL, or attached file path exposed by the host environment. If no usable path or URL is available, ask the user for one instead of answering from native vision.
 2. Inspect media paths and sizes before sending local files. If a file appears sensitive, user-private, unusually large, or outside the stated task, ask before uploading it.
 3. Preserve user-specified runtime constraints exactly. If the user asks for `conda run -n py311 python`, keep that command shape for dry runs, live calls, retries, and approval requests.
 4. Call the bundled script before giving the final answer or producing image output. Use `image` for screenshots, photos, charts, receipts, diagrams, UI states, and multi-image comparison. Use `video` for recordings, demos, timeline extraction, or video summaries. Use `generate` for text-to-image and `edit` for prompt-based image editing.
 5. Keep perception and creation as separate phases. Do not pass `--output` to `image` or `video`; use `--json-output` for debugging provider responses. For "generate a similar style image", first run `image` to get a style analysis/prompt, then run `generate` with a local output path.
-6. For perception tasks, use local-file default transport unless there is a reason to override it:
-   - Local files: default `--transport files`; the script handles provider upload details.
+6. For perception tasks, do not use the provider Files API:
+   - Local files: default `--transport base64`.
    - Remote URLs: pass the URL directly.
-   - One-off small local images: use `--transport base64` if persistent provider storage is undesirable.
+   - Use `--transport url` only for URL-like inputs.
 7. For image generation/editing, pass a clear prompt and an `--output` path. Use `--image-size`, `--steps`, `--cfg-scale`, `--seed`, `--negative-prompt`, and `--text-mode` only when the user request calls for those controls.
 8. Choose `--reasoning-effort` deliberately for perception tasks:
    - `low`: simple description, OCR-like extraction, short summary.
@@ -71,7 +71,7 @@ Follow this troubleshooting ladder before giving up:
 4. URL failure: verify the media URL with a lightweight fetch such as `curl -I`. If the URL is reachable but the provider fails, download the media to `/tmp` and retry as a local file through the script.
 5. Empty or truncated content: retry once with a shorter, simpler prompt, `--reasoning-effort low`, `--max-tokens 4096` or higher, and `--json-output /tmp/external-multimodal-response.json` so the full response can be inspected.
 6. Generation/editing failure: simplify the prompt, ensure the prompt is within provider limits, reduce requested complexity, and retry once with `--json-output` only when the task supports it.
-7. Upload failure, `404`, `500`, or connection error: preserve the exact error message. For local perception files, retry once with `--transport base64`, `--reasoning-effort low`, `--max-tokens 4096`, and `--json-output /tmp/external-multimodal-response.json` before treating it as a provider or endpoint problem.
+7. Provider `404`, `500`, or connection error: preserve the exact error message. Confirm that perception uses `https://api.stepfun.com/v1` and generation/editing uses `https://api.stepfun.com/step_plan/v1`. Do not switch local perception to the provider Files API.
 8. Video too large or long: check the current provider limits. Ask the user to trim/compress, or use `ffmpeg` to segment the file.
 9. Still failing: summarize attempted steps, last error, and the safest next action. Do not silently substitute native vision or built-in image generation output.
 

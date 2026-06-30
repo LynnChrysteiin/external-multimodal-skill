@@ -22,13 +22,13 @@ This is the current provider guide for the `external-multimodal` skill. It tells
 - Provider adapter: `stepfun`
 - Perception model: `step-3.7-flash`
 - Image generation/editing model: `step-image-edit-2`
-- Perception and Files API base URL configured in the script: `https://api.stepfun.com/v1`
+- Perception Chat Completions base URL configured in the script: `https://api.stepfun.com/v1`
 - Image generation/editing base URL configured in the script: `https://api.stepfun.com/step_plan/v1`
 - API key environment variable: `STEP_API_KEY`
 - Python dependency for live calls: `openai>=1.0`
 - Default script: `scripts/external_multimodal.py`
 
-Do not hard-code API keys. Do not print `STEP_API_KEY`. Do not rebuild StepFun API requests manually when the script can be used. Do not collapse StepFun's perception/files and image generation/editing base URLs into one setting.
+Do not hard-code API keys. Do not print `STEP_API_KEY`. Do not rebuild StepFun API requests manually when the script can be used. Do not collapse StepFun's perception and image generation/editing base URLs into one setting. Do not use StepFun Files API for local media; the script sends local perception files as Base64 data URLs.
 
 ## Safe Execution
 
@@ -71,10 +71,11 @@ Analyze a local image:
 python scripts/external_multimodal.py image \
   --provider stepfun \
   --input /tmp/input.jpg \
+  --transport base64 \
   --prompt "识别这张截图中的关键信息"
 ```
 
-Analyze a local image after file upload fails, for example after provider `404` from the default `files` transport:
+Analyze a local image with the recommended no-Files path:
 
 ```bash
 conda run -n py311 python scripts/external_multimodal.py image \
@@ -139,12 +140,12 @@ python scripts/external_multimodal.py image \
 
 ## Inputs
 
-- `image`: remote image URL, local image path, data URL, or provider file URL.
-- `video`: remote video URL, local video path, data URL, or provider file URL.
+- `image`: remote image URL, local image path, or data URL.
+- `video`: remote video URL, local video path, or data URL.
 - `generate`: prompt only, no input file.
 - `edit`: exactly one local image path.
 
-For perception local files, keep the default transport unless there is a reason to override it. For editing, pass a local file; download remote images first.
+For perception local files, keep the default `base64` transport. The script intentionally does not call StepFun Files API. For editing, pass a local file; download remote images first.
 
 For a task that asks to generate a similar-style image from a reference, use two separate phases:
 
@@ -156,7 +157,7 @@ For a task that asks to generate a similar-style image from a reference, use two
 - `--reasoning-effort low|medium|high`: use `low` for simple description, `medium` for default analysis, `high` for complex reasoning. If content is empty or truncated, retry with `low` because reasoning can consume output budget on some providers.
 - `--max-tokens N`: maximum output budget. The script defaults to `4096`; use at least this for detailed descriptions, and raise it for long structured reports.
 - `--detail high|low|auto`: image detail level; default is `high`.
-- `--transport files|base64|url`: use the default `files` for local files; use `base64` for small one-off images; use `url` only for URL-like inputs.
+- `--transport base64|url`: use the default `base64` for local files; use `url` only for URL-like inputs.
 - `--json-output PATH`: write full provider response for debugging.
 - `--dry-run`: validate inputs and print a provider-neutral command summary.
 - `--output PATH`: save generated or edited image output locally. Use only with `generate` or `edit`; use `--json-output` for `image` or `video`.
@@ -219,7 +220,7 @@ python scripts/external_multimodal.py image \
 
 5. For empty or truncated perception output, retry once with a simpler prompt, `--reasoning-effort low`, `--max-tokens 4096` or higher, and `--json-output /tmp/external-multimodal-response.json`.
 
-6. For upload failures or provider `404` from the default `files` transport, first check that perception and file upload are using `https://api.stepfun.com/v1`, not the Step Plan image base URL. Then verify file path, format, size, and network access. For local images, retry once with `--transport base64`, `--reasoning-effort low`, `--max-tokens 4096`, and `--json-output /tmp/external-multimodal-analysis.json`.
+6. For provider `404`, first check that perception uses `https://api.stepfun.com/v1`, not the Step Plan image base URL. Then verify file path, format, size, and network access. Do not switch local perception to StepFun Files API; keep `--transport base64`, `--reasoning-effort low`, `--max-tokens 4096`, and `--json-output /tmp/external-multimodal-analysis.json` for local-image diagnosis.
 
 7. For generation/editing failures, check prompt length, simplify the requested change, set `--text-mode` when rendering visible text, and retry once with a fixed `--seed` if reproducibility matters.
 
