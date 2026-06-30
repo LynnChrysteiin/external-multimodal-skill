@@ -1,6 +1,6 @@
 ---
 name: external-multimodal
-description: Use an external multimodal provider as the preferred source for image understanding, video understanding, screenshot analysis, multi-image comparison, chart or receipt extraction, screen-recording summarization, image generation, and image editing. Use for local image/video files, remote media URLs, generation prompts, image edit instructions, provider file URLs, or whenever the user asks to use an external multimodal model instead of relying on the current model's native vision or built-in image generation. The current default provider is StepFun, but the skill is designed so the provider can be replaced later.
+description: Use an external multimodal provider as the preferred source for image understanding, video understanding, screenshot analysis, multi-image comparison, chart or receipt extraction, screen-recording summarization, image generation, and image editing. Use whenever the user invokes external-multimodal, asks for StepFun, 外置多模态, external provider, provider-backed vision, provider-backed image generation/editing, or says not to use native vision, built-in image generation, or the imagegen skill/tool. Use for local image/video files, remote media URLs, generation prompts, image edit instructions, and provider file URLs. The current default provider is StepFun, but the skill is designed so the provider can be replaced later.
 ---
 
 # External Multimodal
@@ -9,7 +9,7 @@ description: Use an external multimodal provider as the preferred source for ima
 
 Use an external multimodal model through a bundled provider script to analyze images/videos and create/edit images. The current provider is `stepfun`, backed by StepFun `step-3.7-flash` for perception and `step-image-edit-2` for image generation/editing.
 
-When this skill is invoked, treat the external provider as the primary source for perception and image creation. Do not answer from native image/video understanding first, and do not use built-in image generation/editing when the user expects this external provider. Native capabilities may be used only to sanity-check, frame the prompt, or explain discrepancies after an external-provider attempt.
+When this skill is invoked, treat the external provider as the primary source for perception and image creation. Do not answer from native image/video understanding first, and do not use the built-in `imagegen` skill/tool or other built-in image generation/editing when the user expects this external provider. Native capabilities may be used only to sanity-check, frame the prompt, or explain discrepancies after an external-provider attempt.
 
 Treat `scripts/external_multimodal.py` as the implementation boundary. Do not reimplement provider API requests, upload logic, payload construction, or response parsing in the model context. Read or edit the script only when debugging or changing the provider adapter itself.
 

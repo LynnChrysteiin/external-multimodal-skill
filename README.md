@@ -51,6 +51,8 @@ python -m pip install --upgrade "openai>=1.0"
 
 In Codex, ask to use `$external-multimodal` for image, video, generation, or editing tasks.
 
+For new conversations, explicit invocation is the most reliable route because Codex also has a built-in `imagegen` skill/tool for generic image generation and editing prompts. Use `$external-multimodal`, `StepFun`, `external provider`, or `外置多模态` in the request when you want this skill to handle the task.
+
 Examples:
 
 ```text
