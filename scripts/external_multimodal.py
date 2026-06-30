@@ -16,7 +16,8 @@ from urllib.parse import urlparse
 
 
 DEFAULT_PROVIDER = "stepfun"
-STEPFUN_BASE_URL = "https://api.stepfun.com/step_plan/v1"
+STEPFUN_MULTIMODAL_BASE_URL = "https://api.stepfun.com/v1"
+STEPFUN_IMAGE_BASE_URL = "https://api.stepfun.com/step_plan/v1"
 STEPFUN_PERCEPTION_MODEL = "step-3.7-flash"
 STEPFUN_IMAGE_MODEL = "step-image-edit-2"
 STEPFUN_API_KEY_ENV = "STEP_API_KEY"
@@ -228,14 +229,14 @@ def redact_secrets(text: str) -> str:
     return redacted
 
 
-def create_client(provider: str, api_key: str) -> Any:
+def create_client(provider: str, api_key: str, base_url: str) -> Any:
     if provider != "stepfun":
         raise MultimodalCliError(f"Unsupported provider: {provider}")
     try:
         from openai import OpenAI
     except ImportError as exc:
         raise MultimodalCliError("Missing dependency: install with `pip install --upgrade 'openai>=1.0'`.") from exc
-    return OpenAI(api_key=api_key, base_url=STEPFUN_BASE_URL)
+    return OpenAI(api_key=api_key, base_url=base_url)
 
 
 def generate_image(client: Any, args: argparse.Namespace) -> dict[str, Any]:
@@ -373,15 +374,16 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(build_dry_run_summary(args), ensure_ascii=False, indent=2))
             return 0
 
-        client = create_client(args.provider, api_key or "")
-
         if args.kind == "generate":
+            client = create_client(args.provider, api_key or "", STEPFUN_IMAGE_BASE_URL)
             print(json.dumps(generate_image(client, args), ensure_ascii=False, indent=2))
             return 0
         if args.kind == "edit":
+            client = create_client(args.provider, api_key or "", STEPFUN_IMAGE_BASE_URL)
             print(json.dumps(edit_image(client, args), ensure_ascii=False, indent=2))
             return 0
 
+        client = create_client(args.provider, api_key or "", STEPFUN_MULTIMODAL_BASE_URL)
         media_urls = [
             resolve_media_url(
                 client=client,

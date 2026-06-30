@@ -7,7 +7,7 @@ description: Use an external multimodal provider as the preferred source for ima
 
 ## Overview
 
-Use an external multimodal model through a bundled provider script to analyze images/videos and create/edit images. The current provider is `stepfun`, backed by StepFun `step-3.7-flash` for perception and `step-image-edit-2` for image generation/editing.
+Use an external multimodal model through a bundled provider script to analyze images/videos and create/edit images. The current provider is `stepfun`, backed by StepFun `step-3.7-flash` for perception and `step-image-edit-2` for image generation/editing. The adapter intentionally uses separate StepFun base URLs for perception/files and image generation/editing.
 
 When this skill is invoked, treat the external provider as the primary source for perception and image creation. Do not answer from native image/video understanding first, and do not use the built-in `imagegen` skill/tool or other built-in image generation/editing when the user expects this external provider. Native capabilities may be used only to sanity-check, frame the prompt, or explain discrepancies after an external-provider attempt.
 
@@ -49,7 +49,7 @@ The default provider is `stepfun`. For StepFun, set the API key in `STEP_API_KEY
 ## Provider Adapter
 
 - Current default: `--provider stepfun`.
-- StepFun-specific provider name, models, environment variable, formats, generation/edit options, limits, and troubleshooting live in `references/stepfun_provider.md`.
+- StepFun-specific provider name, models, base URLs, environment variable, formats, generation/edit options, limits, and troubleshooting live in `references/stepfun_provider.md`.
 - If a future provider replaces StepFun, update the script adapter and add a provider reference file without changing this skill's name or user-facing trigger.
 
 ## Common Tasks
