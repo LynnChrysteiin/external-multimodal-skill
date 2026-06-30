@@ -5,6 +5,16 @@ Sources:
 - https://platform.stepfun.com/docs/zh/guides/models/image
 - https://platform.stepfun.com/docs/zh/guides/models/step-image-edit-2
 
+## Contents
+
+- [Provider](#provider)
+- [Safe Execution](#safe-execution)
+- [Commands](#commands)
+- [Inputs](#inputs)
+- [Options](#options)
+- [Supported Formats And Limits](#supported-formats-and-limits)
+- [Troubleshooting Ladder](#troubleshooting-ladder)
+
 This is the current provider guide for the `external-multimodal` skill. It tells the agent which provider is configured and how to use the bundled script. The Python script owns API calls, uploads, request construction, response parsing, and image file decoding.
 
 ## Provider
@@ -17,7 +27,30 @@ This is the current provider guide for the `external-multimodal` skill. It tells
 - Python dependency for live calls: `openai>=1.0`
 - Default script: `scripts/external_multimodal.py`
 
-Do not hard-code API keys. Do not rebuild StepFun API requests manually when the script can be used.
+Do not hard-code API keys. Do not print `STEP_API_KEY`. Do not rebuild StepFun API requests manually when the script can be used.
+
+## Safe Execution
+
+When the user specifies an environment such as `py311`, keep that command shape for dry runs, live calls, retries, and approval requests:
+
+```bash
+conda run -n py311 python scripts/external_multimodal.py image \
+  --input /tmp/input.jpg \
+  --transport base64 \
+  --reasoning-effort low \
+  --max-tokens 4096 \
+  --json-output /tmp/external-multimodal-analysis.json \
+  --prompt "请分析这张图的主题、构图、色彩、光影、材质、镜头感和可复现风格提示词。"
+```
+
+Check the API key only by presence:
+
+```bash
+source ~/.zshrc >/dev/null 2>&1
+test -n "$STEP_API_KEY"
+```
+
+Never use commands that print the key, and never inline the key before a command.
 
 ## Commands
 
@@ -38,6 +71,19 @@ python scripts/external_multimodal.py image \
   --provider stepfun \
   --input /tmp/input.jpg \
   --prompt "识别这张截图中的关键信息"
+```
+
+Analyze a local image after file upload fails, for example after provider `404` from the default `files` transport:
+
+```bash
+conda run -n py311 python scripts/external_multimodal.py image \
+  --provider stepfun \
+  --input /tmp/input.jpg \
+  --transport base64 \
+  --reasoning-effort low \
+  --max-tokens 4096 \
+  --json-output /tmp/external-multimodal-analysis.json \
+  --prompt "请分析这张图的主题、构图、色彩、光影、材质、镜头感和可复现风格提示词。"
 ```
 
 Analyze a local video:
@@ -99,6 +145,11 @@ python scripts/external_multimodal.py image \
 
 For perception local files, keep the default transport unless there is a reason to override it. For editing, pass a local file; download remote images first.
 
+For a task that asks to generate a similar-style image from a reference, use two separate phases:
+
+1. Run `image` without `--output`, optionally with `--json-output`, to produce a style analysis and generation prompt.
+2. Run `generate` with the derived, de-identified prompt and an `--output` image path.
+
 ## Options
 
 - `--reasoning-effort low|medium|high`: use `low` for simple description, `medium` for default analysis, `high` for complex reasoning. If content is empty or truncated, retry with `low` because reasoning can consume output budget on some providers.
@@ -107,7 +158,7 @@ For perception local files, keep the default transport unless there is a reason 
 - `--transport files|base64|url`: use the default `files` for local files; use `base64` for small one-off images; use `url` only for URL-like inputs.
 - `--json-output PATH`: write full provider response for debugging.
 - `--dry-run`: validate inputs and print a provider-neutral command summary.
-- `--output PATH`: save generated or edited image output locally. If omitted, the script writes to `/tmp`.
+- `--output PATH`: save generated or edited image output locally. Use only with `generate` or `edit`; use `--json-output` for `image` or `video`.
 - `--image-size SIZE`: generated image size. Current StepFun values are `1024x1024`, `768x1360`, `896x1184`, `1360x768`, `1184x896`.
 - `--steps N`: generation/editing steps, default `8`, range `1` to `50`.
 - `--cfg-scale N`: generation/editing guidance scale, default `1.0`, range `1.0` to `10.0`.
@@ -167,7 +218,7 @@ python scripts/external_multimodal.py image \
 
 5. For empty or truncated perception output, retry once with a simpler prompt, `--reasoning-effort low`, `--max-tokens 4096` or higher, and `--json-output /tmp/external-multimodal-response.json`.
 
-6. For upload failures, verify file path, format, size, and network access. For small one-off local images, try `--transport base64`.
+6. For upload failures or provider `404` from the default `files` transport, verify file path, format, size, and network access. For local images, retry once with `--transport base64`, `--reasoning-effort low`, `--max-tokens 4096`, and `--json-output /tmp/external-multimodal-analysis.json`.
 
 7. For generation/editing failures, check prompt length, simplify the requested change, set `--text-mode` when rendering visible text, and retry once with a fixed `--seed` if reproducibility matters.
 

@@ -24,6 +24,13 @@ The current provider adapter is StepFun. The skill is intentionally named `exter
 
 API keys must stay in environment variables. Do not hard-code keys in commands, source files, prompts, logs, or generated artifacts.
 
+Check that the key exists without printing it:
+
+```bash
+source ~/.zshrc >/dev/null 2>&1
+test -n "$STEP_API_KEY"
+```
+
 ## Install
 
 Clone this repository into a Codex skills directory, or copy the `external-multimodal` folder into your skills path.
@@ -35,11 +42,7 @@ mkdir -p ~/.codex/skills
 git clone https://github.com/LynnChrysteiin/external-multimodal-skill.git ~/.codex/skills/external-multimodal
 ```
 
-Set the StepFun API key:
-
-```bash
-export STEP_API_KEY="your_api_key_here"
-```
+Set `STEP_API_KEY` through a private shell config, secret manager, or CI secret. Avoid pasting the real key into shared terminal logs or command history.
 
 Install the Python SDK used by the provider adapter:
 
@@ -120,6 +123,8 @@ python scripts/external_multimodal.py image \
 - Local image/video perception defaults to provider file upload.
 - Use `--transport base64` for small one-off local images when persistent provider storage is undesirable.
 - Use `--max-tokens 4096` or higher for detailed image/video analysis.
+- Use `--json-output` for image/video analysis responses; `--output` is only for image generation and editing.
+- For reference-to-image workflows, analyze the reference first, then run `generate` with the derived style prompt.
 - If perception output is empty or truncated, retry with a shorter prompt, `--reasoning-effort low`, and `--json-output /tmp/external-multimodal-response.json`.
 - For provider-specific options, formats, and troubleshooting, see `references/stepfun_provider.md`.
 

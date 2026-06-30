@@ -219,6 +219,15 @@ def provider_api_key_env(provider: str) -> str:
     raise MultimodalCliError(f"Unsupported provider: {provider}")
 
 
+def redact_secrets(text: str) -> str:
+    redacted = text
+    for env_name in (STEPFUN_API_KEY_ENV,):
+        secret = os.environ.get(env_name)
+        if secret:
+            redacted = redacted.replace(secret, "[REDACTED]")
+    return redacted
+
+
 def create_client(provider: str, api_key: str) -> Any:
     if provider != "stepfun":
         raise MultimodalCliError(f"Unsupported provider: {provider}")
@@ -337,6 +346,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         raise MultimodalCliError("Video mode accepts exactly one --input.")
     if args.kind == "video" and args.detail != "high":
         raise MultimodalCliError("--detail is only valid for image perception tasks.")
+    if args.kind in {"image", "video"} and args.output:
+        raise MultimodalCliError("--output is only valid for generate/edit tasks; use --json-output for perception responses.")
     return args
 
 
@@ -391,10 +402,10 @@ def main(argv: list[str] | None = None) -> int:
 
         return 0
     except MultimodalCliError as exc:
-        print(f"error: {exc}", file=sys.stderr)
+        print(f"error: {redact_secrets(str(exc))}", file=sys.stderr)
         return 2
     except Exception as exc:
-        print(f"error: external multimodal request failed: {exc}", file=sys.stderr)
+        print(f"error: external multimodal request failed: {redact_secrets(str(exc))}", file=sys.stderr)
         return 1
 
 
