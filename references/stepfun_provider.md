@@ -22,13 +22,12 @@ This is the current provider guide for the `external-multimodal` skill. It tells
 - Provider adapter: `stepfun`
 - Perception model: `step-3.7-flash`
 - Image generation/editing model: `step-image-edit-2`
-- Perception Chat Completions base URL configured in the script: `https://api.stepfun.com/v1`
-- Image generation/editing base URL configured in the script: `https://api.stepfun.com/step_plan/v1`
+- StepFun base URL configured in the script: `https://api.stepfun.com/step_plan/v1`
 - API key environment variable: `STEP_API_KEY`
 - Python dependency for live calls: `openai>=1.0`
 - Default script: `scripts/external_multimodal.py`
 
-Do not hard-code API keys. Do not print `STEP_API_KEY`. Do not rebuild StepFun API requests manually when the script can be used. Do not collapse StepFun's perception and image generation/editing base URLs into one setting. Do not use StepFun Files API for local media; the script sends local perception files as Base64 data URLs.
+Do not hard-code API keys. Do not print `STEP_API_KEY`. Do not rebuild StepFun API requests manually when the script can be used. Use StepFun Step Plan as the single provider base URL. Do not use StepFun Files API for local media; the script sends local perception files as Base64 data URLs.
 
 ## Safe Execution
 
@@ -220,7 +219,7 @@ python scripts/external_multimodal.py image \
 
 5. For empty or truncated perception output, retry once with a simpler prompt, `--reasoning-effort low`, `--max-tokens 4096` or higher, and `--json-output /tmp/external-multimodal-response.json`.
 
-6. For provider `404`, first check that perception uses `https://api.stepfun.com/v1`, not the Step Plan image base URL. Then verify file path, format, size, and network access. Do not switch local perception to StepFun Files API; keep `--transport base64`, `--reasoning-effort low`, `--max-tokens 4096`, and `--json-output /tmp/external-multimodal-analysis.json` for local-image diagnosis.
+6. For provider `404`, first check that all StepFun requests use `https://api.stepfun.com/step_plan/v1`. Then verify file path, format, size, and network access. Do not switch local perception to StepFun Files API; keep `--transport base64`, `--reasoning-effort low`, `--max-tokens 4096`, and `--json-output /tmp/external-multimodal-analysis.json` for local-image diagnosis.
 
 7. For generation/editing failures, check prompt length, simplify the requested change, set `--text-mode` when rendering visible text, and retry once with a fixed `--seed` if reproducibility matters.
 

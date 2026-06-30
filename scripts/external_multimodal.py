@@ -16,8 +16,7 @@ from urllib.parse import urlparse
 
 
 DEFAULT_PROVIDER = "stepfun"
-STEPFUN_MULTIMODAL_BASE_URL = "https://api.stepfun.com/v1"
-STEPFUN_IMAGE_BASE_URL = "https://api.stepfun.com/step_plan/v1"
+STEPFUN_BASE_URL = "https://api.stepfun.com/step_plan/v1"
 STEPFUN_PERCEPTION_MODEL = "step-3.7-flash"
 STEPFUN_IMAGE_MODEL = "step-image-edit-2"
 STEPFUN_API_KEY_ENV = "STEP_API_KEY"
@@ -361,15 +360,15 @@ def main(argv: list[str] | None = None) -> int:
             return 0
 
         if args.kind == "generate":
-            client = create_client(args.provider, api_key or "", STEPFUN_IMAGE_BASE_URL)
+            client = create_client(args.provider, api_key or "", STEPFUN_BASE_URL)
             print(json.dumps(generate_image(client, args), ensure_ascii=False, indent=2))
             return 0
         if args.kind == "edit":
-            client = create_client(args.provider, api_key or "", STEPFUN_IMAGE_BASE_URL)
+            client = create_client(args.provider, api_key or "", STEPFUN_BASE_URL)
             print(json.dumps(edit_image(client, args), ensure_ascii=False, indent=2))
             return 0
 
-        client = create_client(args.provider, api_key or "", STEPFUN_MULTIMODAL_BASE_URL)
+        client = create_client(args.provider, api_key or "", STEPFUN_BASE_URL)
         media_urls = [
             resolve_media_url(
                 client=client,

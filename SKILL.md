@@ -7,7 +7,7 @@ description: Use an external multimodal provider as the preferred source for ima
 
 ## Overview
 
-Use an external multimodal model through a bundled provider script to analyze images/videos and create/edit images. The current provider is `stepfun`, backed by StepFun `step-3.7-flash` for perception and `step-image-edit-2` for image generation/editing. The adapter intentionally uses separate StepFun base URLs for perception and image generation/editing, and it does not use the provider Files API for local media.
+Use an external multimodal model through a bundled provider script to analyze images/videos and create/edit images. The current provider is `stepfun`, backed by StepFun `step-3.7-flash` for perception and `step-image-edit-2` for image generation/editing. The adapter uses StepFun Step Plan as its single base URL and does not use the provider Files API for local media.
 
 When this skill is invoked, treat the external provider as the primary source for perception and image creation. Do not answer from native image/video understanding first, and do not use the built-in `imagegen` skill/tool or other built-in image generation/editing when the user expects this external provider. Native capabilities may be used only to sanity-check, frame the prompt, or explain discrepancies after an external-provider attempt.
 
@@ -49,7 +49,7 @@ The default provider is `stepfun`. For StepFun, set the API key in `STEP_API_KEY
 ## Provider Adapter
 
 - Current default: `--provider stepfun`.
-- StepFun-specific provider name, models, base URLs, environment variable, formats, generation/edit options, limits, and troubleshooting live in `references/stepfun_provider.md`.
+- StepFun-specific provider name, models, base URL, environment variable, formats, generation/edit options, limits, and troubleshooting live in `references/stepfun_provider.md`.
 - If a future provider replaces StepFun, update the script adapter and add a provider reference file without changing this skill's name or user-facing trigger.
 
 ## Common Tasks
@@ -71,7 +71,7 @@ Follow this troubleshooting ladder before giving up:
 4. URL failure: verify the media URL with a lightweight fetch such as `curl -I`. If the URL is reachable but the provider fails, download the media to `/tmp` and retry as a local file through the script.
 5. Empty or truncated content: retry once with a shorter, simpler prompt, `--reasoning-effort low`, `--max-tokens 4096` or higher, and `--json-output /tmp/external-multimodal-response.json` so the full response can be inspected.
 6. Generation/editing failure: simplify the prompt, ensure the prompt is within provider limits, reduce requested complexity, and retry once with `--json-output` only when the task supports it.
-7. Provider `404`, `500`, or connection error: preserve the exact error message. Confirm that perception uses `https://api.stepfun.com/v1` and generation/editing uses `https://api.stepfun.com/step_plan/v1`. Do not switch local perception to the provider Files API.
+7. Provider `404`, `500`, or connection error: preserve the exact error message. Confirm that all StepFun requests use `https://api.stepfun.com/step_plan/v1`. Do not switch local perception to the provider Files API.
 8. Video too large or long: check the current provider limits. Ask the user to trim/compress, or use `ffmpeg` to segment the file.
 9. Still failing: summarize attempted steps, last error, and the safest next action. Do not silently substitute native vision or built-in image generation output.
 

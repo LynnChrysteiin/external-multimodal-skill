@@ -19,8 +19,7 @@ The current provider adapter is StepFun. The skill is intentionally named `exter
 - Provider: StepFun
 - Perception model: `step-3.7-flash`
 - Image generation/editing model: `step-image-edit-2`
-- Perception Chat Completions base URL: `https://api.stepfun.com/v1`
-- Image generation/editing base URL: `https://api.stepfun.com/step_plan/v1`
+- Base URL: `https://api.stepfun.com/step_plan/v1`
 - API key environment variable: `STEP_API_KEY`
 
 API keys must stay in environment variables. Do not hard-code keys in commands, source files, prompts, logs, or generated artifacts.
